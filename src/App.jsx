@@ -16,8 +16,8 @@ export default function App() {
     const DEFAULT_IMG = isSpecialDay ? randomPhoto : photo6;
 
     const [imgSrc, setImgSrc] = useState(DEFAULT_IMG);
-    const [size, setSize] = useState(4);
-    const [tiles, setTiles] = useState(() => makeSolved(4));
+    const [size, setSize] = useState(3);
+    const [tiles, setTiles] = useState(() => makeSolved(3));
     const [moves, setMoves] = useState(0);
     const [shuffling, setShuffling] = useState(false);
 
