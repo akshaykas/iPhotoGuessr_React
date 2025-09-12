@@ -4,22 +4,15 @@ import photo2 from "./Photos/25346bab-6070-48d1-8563-2a3862fd330a.jpg";
 import photo3 from "./Photos/44c790d1-0e0b-4bc9-9bb7-aba1e4724c7d.jpg";
 import photo4 from "./Photos/8a252e66-6084-4bd7-945f-571809e0a489.jpg";
 import photo5 from "./Photos/9890ec6a-1aa1-4627-9f7b-a33abcf88cd6.jpg";
+import photo6 from "./Photos/6c45540a-8ec4-46e2-b4de-ff1a1f4f5cba.jpg";
 
-import photo6 from "./Photos/6c45540a-8ec4-46e2-b4de-ff1a1f4f5cba.jpg"
+import video1 from "./Photos/450bbe16-0204-42d9-a9a4-b2f4ecf893b3.mp4";
 
 export default function App() {
-
     const today = new Date();
-    const isSpecialDay =
-        today.getMonth() === 8 && today.getDate() === 12;
-    // getMonth() is zero-based (8 = September)
-
-    // Put them into an array
+    const isSpecialDay = today.getMonth() === 8 && today.getDate() === 12; // Sep 12 (0-based month)
     const defaultPhotos = [photo1, photo2, photo3, photo4, photo5];
-
-    // Pick a random one
     const randomPhoto = defaultPhotos[Math.floor(Math.random() * defaultPhotos.length)];
-
     const DEFAULT_IMG = isSpecialDay ? randomPhoto : photo6;
 
     const [imgSrc, setImgSrc] = useState(DEFAULT_IMG);
@@ -40,20 +33,36 @@ export default function App() {
 
     useEffect(() => {
         setMoves(0);
-        shuffle();                    // <- reshuffle after resizing (and on first load)
+        shuffle(); // reshuffle after resizing (and on first load)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [size]);
 
+    const videoRef = useRef(null);
+
+    const handlePuzzleSolved = () => {
+        if (videoRef.current) {
+            videoRef.current.style.display = "block"; // show video if hidden
+            // Usually not needed since we call from a user gesture, but harmless:
+            videoRef.current.muted = false;
+            videoRef.current.play().catch(() => { });
+        }
+    };
 
     const N = size * size;
     const blankIndex = tiles.indexOf(N - 1);
-    const solved = useMemo(() => tiles.every((v, i) => v === i), [tiles]);
 
-    // Board dimension (px) — pick a comfy size that fits on small screens
+    // Helper: check solved (used both by UI and move handler)
+    function isSolved(arr, s) {
+        for (let i = 0; i < s * s; i++) if (arr[i] !== i) return false;
+        return true;
+    }
+
+    const solved = useMemo(() => isSolved(tiles, size), [tiles, size]);
+
+    // Board dimension (px)
     const boardPx = (() => {
-        // Leave room for controls; pick the tighter bound of width and height.
         const maxByWidth = Math.min(vw * 0.92, 560);
-        const maxByHeight = Math.min(vh * 0.55, 520); // a bit shorter to fit controls on mobile
+        const maxByHeight = Math.min(vh * 0.55, 520);
         return Math.floor(isMobile ? Math.min(maxByWidth, maxByHeight) : Math.min(vw * 0.6, 520));
     })();
 
@@ -71,14 +80,21 @@ export default function App() {
         const dc = Math.abs(a.c - b.c);
         return (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
     }
+
     function move(i) {
         if (solved || !isNeighbor(i, blankIndex)) return;
-        setTiles((prev) => {
+
+        setTiles(prev => {
             const next = prev.slice();
             [next[i], next[blankIndex]] = [next[blankIndex], next[i]];
+            // Check if THIS MOVE solved the board; call video from the user gesture context.
+            if (isSolved(next, size)) {
+                // Let React update move count too, then play
+                setTimeout(handlePuzzleSolved, 0);
+            }
             return next;
         });
-        setMoves((m) => m + 1);
+        setMoves(m => m + 1);
     }
 
     async function shuffle() {
@@ -90,18 +106,18 @@ export default function App() {
                 const j = Math.floor(Math.random() * (i + 1));
                 [p[i], p[j]] = [p[j], p[i]];
             }
-            if (isSolvable(p, size) && !p.every((v, i) => v === i)) {
+            if (isSolvable(p, size) && !isSolved(p, size)) {
                 setTiles(p);
                 setMoves(0);
                 break;
             }
-            await new Promise((r) => setTimeout(r, 0));
+            await new Promise(r => setTimeout(r, 0));
         }
         setShuffling(false);
     }
 
     function isSolvable(permutation, s) {
-        const arr = permutation.filter((v) => v !== permutation.length - 1);
+        const arr = permutation.filter(v => v !== permutation.length - 1);
         const inversions = countInversions(arr);
         if (s % 2 === 1) return inversions % 2 === 0;
         const blankPos = permutation.indexOf(permutation.length - 1);
@@ -124,7 +140,7 @@ export default function App() {
         const file = e.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (ev) => setImgSrc(String(ev.target?.result || DEFAULT_IMG));
+        reader.onload = ev => setImgSrc(String(ev.target?.result || DEFAULT_IMG));
         reader.readAsDataURL(file);
     }
 
@@ -192,9 +208,7 @@ export default function App() {
                     : "linear-gradient(180deg,#2563eb33,#1d4ed833)",
             color: "#e6ebff",
             boxShadow: "inset 0 1px 0 rgba(255,255,255,.05)",
-            transition: prefersReducedMotion
-                ? "none"
-                : "transform .06s ease, filter .2s ease, border-color .2s ease",
+            transition: prefersReducedMotion ? "none" : "transform .06s ease, filter .2s ease, border-color .2s ease",
             touchAction: "manipulation",
         }),
         row: {
@@ -270,7 +284,6 @@ export default function App() {
         <div style={ui.page}>
             <div style={ui.card}>
                 <div style={ui.header}>
-
                     <div>
                         {isSpecialDay && (
                             <div
@@ -287,9 +300,8 @@ export default function App() {
                                 🎉 Happy Birthday Bink!
                             </div>
                         )}
-
-                        {/* rest of your puzzle UI */}
                     </div>
+
                     <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between" }}>
                         <span style={ui.title}>✨ Slide Puzzle</span>
                         <span style={ui.badge}>
@@ -303,10 +315,10 @@ export default function App() {
                             <select
                                 style={ui.select}
                                 value={size}
-                                onChange={(e) => setSize(Number(e.target.value))}
+                                onChange={e => setSize(Number(e.target.value))}
                                 disabled={shuffling}
                             >
-                                {[2, 3, 4, 5, 6].map((n) => (
+                                {[2, 3, 4, 5, 6].map(n => (
                                     <option key={n} value={n}>
                                         {n} × {n}
                                     </option>
@@ -319,12 +331,7 @@ export default function App() {
                             Upload image
                         </label>
 
-                        <button
-                            onClick={shuffle}
-                            style={ui.button()}
-                            disabled={shuffling}
-                            title="Shuffle into a solvable configuration"
-                        >
+                        <button onClick={shuffle} style={ui.button()} disabled={shuffling} title="Shuffle into a solvable configuration">
                             {shuffling ? "Shuffling…" : "Shuffle"}
                         </button>
 
@@ -355,18 +362,20 @@ export default function App() {
                                     backgroundSize: `${size * 100}% ${size * 100}%`,
                                     backgroundPosition: isBlank ? "center" : bgPositionForValue(v),
                                     filter: isBlank ? "saturate(0) opacity(.12)" : "none",
-                                    outline: canMove && !isBlank ? "1px solid rgba(99,102,241,.6)" : "1px solid rgba(255,255,255,.06)",
+                                    outline: canMove && !isBlank
+                                        ? "1px solid rgba(99,102,241,.6)"
+                                        : "1px solid rgba(255,255,255,.06)",
                                 };
                                 return (
                                     <div
                                         key={`${v}-${i}`}
                                         onClick={() => !isBlank && move(i)}
                                         style={tileStyle}
-                                        onMouseDown={(e) => {
+                                        onMouseDown={e => {
                                             if (!prefersReducedMotion && !isBlank && canMove) e.currentTarget.style.transform = "scale(.98)";
                                         }}
-                                        onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                                        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                                        onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
+                                        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
                                         aria-label={isBlank ? "blank" : `tile ${v + 1}`}
                                         role="button"
                                     >
@@ -426,10 +435,17 @@ export default function App() {
                         >
                             <div style={{ marginBottom: 8, fontWeight: 700, letterSpacing: ".2px" }}>How to play</div>
                             <p style={ui.hint}>
-                                Tap a tile next to the blank space to slide it. Recreate the original picture. Use{" "}
-                                <em>Shuffle</em> to start a new solvable puzzle. Upload your own image for fun!
+                                Tap a tile next to the blank space to slide it. Recreate the original picture. Use <em>Shuffle</em> to
+                                start a new solvable puzzle. Upload your own image for fun!
                             </p>
                         </div>
+
+                        <video
+                            ref={videoRef}
+                            src={video1}
+                            style={{ display: "none", width: "100%", maxWidth: "600px" }}
+                            controls
+                        />
                     </aside>
                 </div>
             </div>
