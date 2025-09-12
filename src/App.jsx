@@ -1,8 +1,27 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
+import photo1 from "./Photos/2077b821-05b7-4822-a196-69c4251c5333.jpg";
+import photo2 from "./Photos/25346bab-6070-48d1-8563-2a3862fd330a.jpg";
+import photo3 from "./Photos/44c790d1-0e0b-4bc9-9bb7-aba1e4724c7d.jpg";
+import photo4 from "./Photos/8a252e66-6084-4bd7-945f-571809e0a489.jpg";
+import photo5 from "./Photos/9890ec6a-1aa1-4627-9f7b-a33abcf88cd6.jpg";
+
+import photo6 from "./Photos/6c45540a-8ec4-46e2-b4de-ff1a1f4f5cba.jpg"
 
 export default function App() {
-    const DEFAULT_IMG =
-        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop";
+
+    const today = new Date();
+    const isSpecialDay =
+        today.getMonth() === 8 && today.getDate() === 12;
+    // getMonth() is zero-based (8 = September)
+
+    // Put them into an array
+    const defaultPhotos = [photo1, photo2, photo3, photo4, photo5];
+
+    // Pick a random one
+    const randomPhoto = defaultPhotos[Math.floor(Math.random() * defaultPhotos.length)];
+
+    const DEFAULT_IMG = isSpecialDay ? randomPhoto : photo6;
+
     const [imgSrc, setImgSrc] = useState(DEFAULT_IMG);
     const [size, setSize] = useState(4);
     const [tiles, setTiles] = useState(() => makeSolved(4));
@@ -20,27 +39,15 @@ export default function App() {
         window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     useEffect(() => {
-        // keep in sync with viewport changes, address mobile URL bar shifts via resize + orientation changes
-        const onResize = () => {
-            setVw(window.innerWidth);
-            setVh(window.innerHeight);
-        };
-        window.addEventListener("resize", onResize, { passive: true });
-        window.addEventListener("orientationchange", onResize, { passive: true });
-        return () => {
-            window.removeEventListener("resize", onResize);
-            window.removeEventListener("orientationchange", onResize);
-        };
-    }, []);
+        setMoves(0);
+        shuffle();                    // <- reshuffle after resizing (and on first load)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [size]);
+
 
     const N = size * size;
     const blankIndex = tiles.indexOf(N - 1);
     const solved = useMemo(() => tiles.every((v, i) => v === i), [tiles]);
-
-    useEffect(() => {
-        setTiles(makeSolved(size));
-        setMoves(0);
-    }, [size]);
 
     // Board dimension (px) — pick a comfy size that fits on small screens
     const boardPx = (() => {
@@ -263,6 +270,26 @@ export default function App() {
         <div style={ui.page}>
             <div style={ui.card}>
                 <div style={ui.header}>
+
+                    <div>
+                        {isSpecialDay && (
+                            <div
+                                style={{
+                                    padding: "12px 16px",
+                                    marginBottom: "16px",
+                                    borderRadius: "8px",
+                                    background: "linear-gradient(90deg, #4f46e5, #6366f1)",
+                                    color: "white",
+                                    fontWeight: "600",
+                                    textAlign: "center",
+                                }}
+                            >
+                                🎉 Happy Birthday Bink!
+                            </div>
+                        )}
+
+                        {/* rest of your puzzle UI */}
+                    </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between" }}>
                         <span style={ui.title}>✨ Slide Puzzle</span>
                         <span style={ui.badge}>
@@ -279,7 +306,7 @@ export default function App() {
                                 onChange={(e) => setSize(Number(e.target.value))}
                                 disabled={shuffling}
                             >
-                                {[3, 4, 5, 6].map((n) => (
+                                {[2, 3, 4, 5, 6].map((n) => (
                                     <option key={n} value={n}>
                                         {n} × {n}
                                     </option>
