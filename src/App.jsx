@@ -1,19 +1,21 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
-import photo1 from "./Photos/2077b821-05b7-4822-a196-69c4251c5333.jpg";
-import photo2 from "./Photos/25346bab-6070-48d1-8563-2a3862fd330a.jpg";
-import photo3 from "./Photos/44c790d1-0e0b-4bc9-9bb7-aba1e4724c7d.jpg";
-import photo4 from "./Photos/8a252e66-6084-4bd7-945f-571809e0a489.jpg";
-import photo5 from "./Photos/9890ec6a-1aa1-4627-9f7b-a33abcf88cd6.jpg";
-import photo6 from "./Photos/6c45540a-8ec4-46e2-b4de-ff1a1f4f5cba.jpg";
+//import photo1 from "./Photos/2077b821-05b7-4822-a196-69c4251c5333.jpg";
+//import photo2 from "./Photos/25346bab-6070-48d1-8563-2a3862fd330a.jpg";
+//import photo3 from "./Photos/44c790d1-0e0b-4bc9-9bb7-aba1e4724c7d.jpg";
+//import photo4 from "./Photos/8a252e66-6084-4bd7-945f-571809e0a489.jpg";
+//import photo5 from "./Photos/9890ec6a-1aa1-4627-9f7b-a33abcf88cd6.jpg";
+//import photo6 from "./Photos/6c45540a-8ec4-46e2-b4de-ff1a1f4f5cba.jpg";
 
-import video1 from "./Photos/450bbe16-0204-42d9-a9a4-b2f4ecf893b3.mp4";
+//import video1 from "./Photos/450bbe16-0204-42d9-a9a4-b2f4ecf893b3.mp4";
 
 export default function App() {
     const today = new Date();
     const isSpecialDay = today.getMonth() === 8 && today.getDate() === 12; // Sep 12 (0-based month)
-    const defaultPhotos = [photo1, photo2, photo3, photo4, photo5];
-    const randomPhoto = defaultPhotos[Math.floor(Math.random() * defaultPhotos.length)];
-    const DEFAULT_IMG = isSpecialDay ? randomPhoto : photo6;
+    //const defaultPhotos = [photo1, photo2, photo3, photo4, photo5];
+    //const randomPhoto = defaultPhotos[Math.floor(Math.random() * defaultPhotos.length)];
+    //const DEFAULT_IMG = isSpecialDay ? randomPhoto : photo6;
+
+    const DEFAULT_IMG = "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop"; // pretty, license-friendly"
 
     const [imgSrc, setImgSrc] = useState(DEFAULT_IMG);
     const [size, setSize] = useState(3);
@@ -440,12 +442,12 @@ export default function App() {
                             </p>
                         </div>
 
-                        <video
-                            ref={videoRef}
-                            src={video1}
-                            style={{ display: "none", width: "100%", maxWidth: "600px" }}
-                            controls
-                        />
+                        {/*<video*/}
+                        {/*    ref={videoRef}*/}
+                        {/*    src={video1}*/}
+                        {/*    style={{ display: "none", width: "100%", maxWidth: "600px" }}*/}
+                        {/*    controls*/}
+                        {/*/>*/}
                     </aside>
                 </div>
             </div>
