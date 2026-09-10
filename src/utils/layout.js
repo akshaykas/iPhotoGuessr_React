@@ -15,8 +15,11 @@ const SIDEBAR_FLOOR = 120;
 // that case the sidebar gets a scrollbar of its own rather than the whole
 // page growing past the viewport.
 export function computeLayout({ vw, vh, isStacked, isNarrow, chromeH, otherSidebarH }) {
-  const pagePad = isNarrow ? 24 : 48;
-  const cardPad = isNarrow ? 32 : 44;
+  // Must track the real vertical padding/border of .ipg-page and .ipg-card
+  // (and their mobile media-query overrides) — these aren't measured live,
+  // so drifting out of sync with the CSS reopens the page-scrollbar bug.
+  const pagePad = isNarrow ? 36 : 64; // .ipg-page padding: 18px/32px top+bottom
+  const cardPad = isNarrow ? 40 : 56; // .ipg-card padding (16px/24px) + border (4px) top+bottom
   const cardGap = 18;
   const safety = 8;
 

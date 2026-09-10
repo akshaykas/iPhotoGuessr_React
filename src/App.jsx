@@ -135,57 +135,59 @@ export default function App() {
 
   return (
     <div className="ipg-page">
-      <div className="ipg-card">
-        <div className="ipg-chrome" ref={chromeRef}>
-          <Header
-            theme={theme}
-            onToggleTheme={() => setTheme(t => (t === "dark" ? "light" : "dark"))}
-            soundOn={soundOn}
-            onToggleSound={() => setSoundOn(s => !s)}
-            onShowHelp={() => setHelpOpen(true)}
-            size={size}
-          />
-
-          <Toolbar
-            size={size}
-            onSizeChange={setSize}
-            onOpenPicker={() => setPickerOpen(true)}
-            onShuffle={shuffle}
-            onRestart={restart}
-            shuffling={shuffling}
-            showNumbers={showNumbers}
-            onToggleNumbers={() => setShowNumbers(v => !v)}
-          />
-        </div>
-
-        <div className="ipg-layout">
-          <div className="ipg-board-wrap">
-            <Board
+      <div className="ipg-cabinet-shadow">
+        <div className="ipg-card">
+          <div className="ipg-chrome" ref={chromeRef}>
+            <Header
+              theme={theme}
+              onToggleTheme={() => setTheme(t => (t === "dark" ? "light" : "dark"))}
+              soundOn={soundOn}
+              onToggleSound={() => setSoundOn(s => !s)}
+              onShowHelp={() => setHelpOpen(true)}
               size={size}
-              tiles={tiles}
-              blankIndex={blankIndex}
-              solved={solved}
-              imgSrc={imgSrc}
+            />
+
+            <Toolbar
+              size={size}
+              onSizeChange={setSize}
+              onOpenPicker={() => setPickerOpen(true)}
+              onShuffle={shuffle}
+              onRestart={restart}
+              shuffling={shuffling}
               showNumbers={showNumbers}
-              boardPx={boardPx}
-              onTileClick={handleTileClick}
-              imageStatus={imageStatus}
-              reducedMotion={prefersReducedMotion}
+              onToggleNumbers={() => setShowNumbers(v => !v)}
             />
           </div>
 
-          <StatsPanel
-            ref={sidebarRef}
-            imgRef={imgRef}
-            moves={moves}
-            elapsedMs={timer.elapsedMs}
-            best={best}
-            progress={progress}
-            imgSrc={imgSrc}
-            solved={solved}
-            imgMaxHeight={referenceCapPx}
-            maxHeight={sidebarMaxHeightPx}
-          />
+          <div className="ipg-layout">
+            <div className="ipg-board-wrap">
+              <Board
+                size={size}
+                tiles={tiles}
+                blankIndex={blankIndex}
+                solved={solved}
+                imgSrc={imgSrc}
+                showNumbers={showNumbers}
+                boardPx={boardPx}
+                onTileClick={handleTileClick}
+                imageStatus={imageStatus}
+                reducedMotion={prefersReducedMotion}
+              />
+            </div>
+
+            <StatsPanel
+              ref={sidebarRef}
+              imgRef={imgRef}
+              moves={moves}
+              elapsedMs={timer.elapsedMs}
+              best={best}
+              progress={progress}
+              imgSrc={imgSrc}
+              solved={solved}
+              imgMaxHeight={referenceCapPx}
+              maxHeight={sidebarMaxHeightPx}
+            />
+          </div>
         </div>
       </div>
 

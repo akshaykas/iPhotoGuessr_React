@@ -15,16 +15,19 @@
   --ipg-text: #f6f1ff;
   --ipg-text-dim: rgba(246, 241, 255, 0.72);
   --ipg-text-faint: rgba(246, 241, 255, 0.5);
-  --ipg-card-bg: rgba(8, 2, 18, 0.86);
-  --ipg-card-border: rgba(5, 217, 232, 0.35);
-  --ipg-panel-bg: rgba(255, 255, 255, 0.05);
-  --ipg-panel-border: rgba(255, 255, 255, 0.12);
-  --ipg-success: #39ff6a;
-  --ipg-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 
-  --ipg-glow-1: rgba(255, 46, 136, 0.35);
-  --ipg-glow-2: rgba(5, 217, 232, 0.28);
-  --ipg-glow-3: rgba(176, 38, 255, 0.28);
+  /* Solid, flat cabinet-plastic surfaces — no glass/blur, so edges stay crisp. */
+  --ipg-cabinet-bg: #170b2c;
+  --ipg-card-bg: #1d0f38;
+  --ipg-card-border: #b026ff;
+  --ipg-panel-bg: #241542;
+  --ipg-panel-border: #402a68;
+  --ipg-bezel-dark: #0a0414;
+  --ipg-success: #39ff6a;
+  --ipg-shadow: 8px 8px 0 rgba(0, 0, 0, 0.5);
+
+  --ipg-floor-1: #1c0e34;
+  --ipg-floor-2: #241442;
 }
 
 :root[data-theme="light"] {
@@ -36,15 +39,17 @@
   --ipg-text: #2b1050;
   --ipg-text-dim: rgba(43, 16, 80, 0.72);
   --ipg-text-faint: rgba(43, 16, 80, 0.52);
-  --ipg-card-bg: rgba(255, 251, 240, 0.88);
-  --ipg-card-border: rgba(176, 38, 255, 0.35);
-  --ipg-panel-bg: rgba(43, 16, 80, 0.05);
-  --ipg-panel-border: rgba(43, 16, 80, 0.14);
-  --ipg-shadow: 0 20px 60px rgba(90, 40, 10, 0.25);
 
-  --ipg-glow-1: rgba(255, 46, 136, 0.2);
-  --ipg-glow-2: rgba(5, 217, 232, 0.18);
-  --ipg-glow-3: rgba(176, 38, 255, 0.18);
+  --ipg-cabinet-bg: #f4c98a;
+  --ipg-card-bg: #fff6e6;
+  --ipg-card-border: #b026ff;
+  --ipg-panel-bg: #fff0d4;
+  --ipg-panel-border: #e3c290;
+  --ipg-bezel-dark: #6b4a1e;
+  --ipg-shadow: 8px 8px 0 rgba(90, 40, 10, 0.3);
+
+  --ipg-floor-1: #ffe1ae;
+  --ipg-floor-2: #ffd18c;
 }
 
 * {
