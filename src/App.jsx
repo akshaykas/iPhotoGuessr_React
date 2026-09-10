@@ -1,456 +1,189 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from "react";
-//import photo1 from "./Photos/2077b821-05b7-4822-a196-69c4251c5333.jpg";
-//import photo2 from "./Photos/25346bab-6070-48d1-8563-2a3862fd330a.jpg";
-//import photo3 from "./Photos/44c790d1-0e0b-4bc9-9bb7-aba1e4724c7d.jpg";
-//import photo4 from "./Photos/8a252e66-6084-4bd7-945f-571809e0a489.jpg";
-//import photo5 from "./Photos/9890ec6a-1aa1-4627-9f7b-a33abcf88cd6.jpg";
-//import photo6 from "./Photos/6c45540a-8ec4-46e2-b4de-ff1a1f4f5cba.jpg";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import "./App.css";
+import Header from "./components/Header";
+import Toolbar from "./components/Toolbar";
+import Board from "./components/Board";
+import StatsPanel from "./components/StatsPanel";
+import WinOverlay from "./components/WinOverlay";
+import ImagePicker from "./components/ImagePicker";
+import HelpModal from "./components/HelpModal";
+import { usePuzzle } from "./hooks/usePuzzle";
+import { useLocalStorage } from "./hooks/useLocalStorage";
+import { useTimer } from "./hooks/useTimer";
+import { useSound } from "./hooks/useSound";
+import { useViewportSize } from "./hooks/useViewportSize";
+import { useImageLoader } from "./hooks/useImageLoader";
+import { boardSizePx } from "./utils/layout";
+import { PRESET_IMAGES } from "./utils/presets";
 
-//import video1 from "./Photos/450bbe16-0204-42d9-a9a4-b2f4ecf893b3.mp4";
+const BEST_KEY = "ipg.best.v1";
 
 export default function App() {
-    const today = new Date();
-    const isSpecialDay = today.getMonth() === 8 && today.getDate() === 12; // Sep 12 (0-based month)
-    //const defaultPhotos = [photo1, photo2, photo3, photo4, photo5];
-    //const randomPhoto = defaultPhotos[Math.floor(Math.random() * defaultPhotos.length)];
-    //const DEFAULT_IMG = isSpecialDay ? randomPhoto : photo6;
+  const [theme, setTheme] = useLocalStorage("ipg.theme", "dark");
+  const [soundOn, setSoundOn] = useLocalStorage("ipg.sound", true);
+  const [showNumbers, setShowNumbers] = useLocalStorage("ipg.numbers", true);
+  const [size, setSize] = useLocalStorage("ipg.size", 3);
+  const [imgSrc, setImgSrc] = useLocalStorage("ipg.image", PRESET_IMAGES[0].url);
+  const [bestBySize, setBestBySize] = useLocalStorage(BEST_KEY, {});
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [showWin, setShowWin] = useState(false);
+  const [justNewBest, setJustNewBest] = useState(false);
 
-    const DEFAULT_IMG = "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop"; // pretty, license-friendly"
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
-    const [imgSrc, setImgSrc] = useState(DEFAULT_IMG);
-    const [size, setSize] = useState(3);
-    const [tiles, setTiles] = useState(() => makeSolved(3));
-    const [moves, setMoves] = useState(0);
-    const [shuffling, setShuffling] = useState(false);
+  const { width: vw, height: vh } = useViewportSize();
+  const isMobile = vw <= 768;
+  const boardPx = boardSizePx(vw, vh, isMobile);
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    // --- Responsive bits ---
-    const containerRef = useRef(null);
-    const [vw, setVw] = useState(window.innerWidth);
-    const [vh, setVh] = useState(window.innerHeight);
-    const isMobile = vw <= 768;
-    const prefersReducedMotion =
-        typeof window !== "undefined" &&
-        window.matchMedia &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const { tiles, moves, blankIndex, solved, shuffling, roundId, move, shuffle, restart } = usePuzzle(size);
+  const timer = useTimer(moves > 0 && !solved);
+  const sound = useSound(soundOn);
+  const imageStatus = useImageLoader(imgSrc);
 
-    useEffect(() => {
-        setMoves(0);
-        shuffle(); // reshuffle after resizing (and on first load)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [size]);
+  // Every new round (shuffle/restart) starts its own clock and clears any win screen.
+  useEffect(() => {
+    timer.reset();
+    setShowWin(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roundId]);
 
-    const videoRef = useRef(null);
+  const best = bestBySize[size];
 
-    const handlePuzzleSolved = () => {
-        if (videoRef.current) {
-            videoRef.current.style.display = "block"; // show video if hidden
-            // Usually not needed since we call from a user gesture, but harmless:
-            videoRef.current.muted = false;
-            videoRef.current.play().catch(() => { });
-        }
-    };
+  useEffect(() => {
+    // moves === 0 means this is a fresh/solved initial board, not a real win.
+    if (!solved || moves === 0) return;
+    sound.playWin();
+    const timeMs = timer.elapsedMs;
+    let isBest = false;
+    setBestBySize(prev => {
+      const current = prev[size];
+      if (!current || moves < current.moves || (moves === current.moves && timeMs < current.timeMs)) {
+        isBest = true;
+        return { ...prev, [size]: { moves, timeMs } };
+      }
+      return prev;
+    });
+    setJustNewBest(isBest);
+    setShowWin(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solved]);
 
-    const N = size * size;
-    const blankIndex = tiles.indexOf(N - 1);
+  const handleTileClick = useCallback(
+    index => {
+      const ok = move(index);
+      if (ok) sound.playMove();
+      else sound.playError();
+    },
+    [move, sound.playMove, sound.playError]
+  );
 
-    // Helper: check solved (used both by UI and move handler)
-    function isSolved(arr, s) {
-        for (let i = 0; i < s * s; i++) if (arr[i] !== i) return false;
-        return true;
-    }
+  const handleSelectPreset = useCallback(
+    url => {
+      setImgSrc(url);
+      setPickerOpen(false);
+      shuffle();
+    },
+    [setImgSrc, shuffle]
+  );
 
-    const solved = useMemo(() => isSolved(tiles, size), [tiles, size]);
+  const handleUpload = useCallback(
+    file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        setImgSrc(String(ev.target?.result || ""));
+        setPickerOpen(false);
+        shuffle();
+      };
+      reader.readAsDataURL(file);
+    },
+    [setImgSrc, shuffle]
+  );
 
-    // Board dimension (px)
-    const boardPx = (() => {
-        const maxByWidth = Math.min(vw * 0.92, 560);
-        const maxByHeight = Math.min(vh * 0.55, 520);
-        return Math.floor(isMobile ? Math.min(maxByWidth, maxByHeight) : Math.min(vw * 0.6, 520));
-    })();
+  const progress = useMemo(() => {
+    let correct = 0;
+    for (let i = 0; i < tiles.length - 1; i++) if (tiles[i] === i) correct++;
+    return Math.round((correct / (tiles.length - 1)) * 100);
+  }, [tiles]);
 
-    // --- Helpers ---
-    function makeSolved(s) {
-        return Array.from({ length: s * s }, (_, i) => i);
-    }
-    function idxToRC(i) {
-        return { r: Math.floor(i / size), c: i % size };
-    }
-    function isNeighbor(i, j) {
-        const a = idxToRC(i);
-        const b = idxToRC(j);
-        const dr = Math.abs(a.r - b.r);
-        const dc = Math.abs(a.c - b.c);
-        return (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
-    }
+  return (
+    <div className="ipg-page">
+      <div className="ipg-card">
+        <Header
+          theme={theme}
+          onToggleTheme={() => setTheme(t => (t === "dark" ? "light" : "dark"))}
+          soundOn={soundOn}
+          onToggleSound={() => setSoundOn(s => !s)}
+          onShowHelp={() => setHelpOpen(true)}
+          size={size}
+        />
 
-    function move(i) {
-        if (solved || !isNeighbor(i, blankIndex)) return;
+        <Toolbar
+          size={size}
+          onSizeChange={setSize}
+          onOpenPicker={() => setPickerOpen(true)}
+          onShuffle={shuffle}
+          onRestart={restart}
+          shuffling={shuffling}
+          showNumbers={showNumbers}
+          onToggleNumbers={() => setShowNumbers(v => !v)}
+        />
 
-        setTiles(prev => {
-            const next = prev.slice();
-            [next[i], next[blankIndex]] = [next[blankIndex], next[i]];
-            // Check if THIS MOVE solved the board; call video from the user gesture context.
-            if (isSolved(next, size)) {
-                // Let React update move count too, then play
-                setTimeout(handlePuzzleSolved, 0);
-            }
-            return next;
-        });
-        setMoves(m => m + 1);
-    }
+        <div className="ipg-layout">
+          <div className="ipg-board-wrap">
+            <Board
+              size={size}
+              tiles={tiles}
+              blankIndex={blankIndex}
+              solved={solved}
+              imgSrc={imgSrc}
+              showNumbers={showNumbers}
+              boardPx={boardPx}
+              onTileClick={handleTileClick}
+              imageStatus={imageStatus}
+              reducedMotion={prefersReducedMotion}
+            />
+          </div>
 
-    async function shuffle() {
-        setShuffling(true);
-        const attemptsCap = 500;
-        for (let attempt = 0; attempt < attemptsCap; attempt++) {
-            const p = makeSolved(size);
-            for (let i = p.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [p[i], p[j]] = [p[j], p[i]];
-            }
-            if (isSolvable(p, size) && !isSolved(p, size)) {
-                setTiles(p);
-                setMoves(0);
-                break;
-            }
-            await new Promise(r => setTimeout(r, 0));
-        }
-        setShuffling(false);
-    }
-
-    function isSolvable(permutation, s) {
-        const arr = permutation.filter(v => v !== permutation.length - 1);
-        const inversions = countInversions(arr);
-        if (s % 2 === 1) return inversions % 2 === 0;
-        const blankPos = permutation.indexOf(permutation.length - 1);
-        const r = Math.floor(blankPos / s);
-        const blankRowFromBottom = s - r;
-        return blankRowFromBottom % 2 === 0 ? inversions % 2 === 1 : inversions % 2 === 0;
-    }
-
-    function countInversions(arr) {
-        let inv = 0;
-        for (let i = 0; i < arr.length; i++) {
-            for (let j = i + 1; j < arr.length; j++) {
-                if (arr[i] > arr[j]) inv++;
-            }
-        }
-        return inv;
-    }
-
-    function onUpload(e) {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => setImgSrc(String(ev.target?.result || DEFAULT_IMG));
-        reader.readAsDataURL(file);
-    }
-
-    // --- UI styles (mobile-aware) ---
-    const ui = {
-        page: {
-            minHeight: "100svh",
-            display: "grid",
-            placeItems: "center",
-            background:
-                "radial-gradient(1200px 600px at 10% -10%, #a78bfa33, transparent), radial-gradient(1000px 500px at 110% 10%, #60a5fa33, transparent), linear-gradient(160deg, #0b1020, #121826 60%, #0b1020)",
-            color: "#e6ebff",
-            fontFamily:
-                "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji",
-            padding: isMobile ? "14px" : "24px",
-        },
-        card: {
-            width: isMobile ? "min(96vw, 860px)" : "min(92vw, 980px)",
-            borderRadius: "18px",
-            background: "linear-gradient(180deg, #1a2236cc, #121826cc)",
-            backdropFilter: "blur(10px)",
-            boxShadow: "0 12px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04)",
-            border: "1px solid rgba(255,255,255,.06)",
-            padding: isMobile ? "14px" : "20px",
-        },
-        header: {
-            display: "flex",
-            flexDirection: isMobile ? "column" : "row",
-            alignItems: isMobile ? "stretch" : "center",
-            justifyContent: isMobile ? "flex-start" : "space-between",
-            gap: isMobile ? "10px" : "12px",
-            marginBottom: "14px",
-        },
-        title: { fontSize: isMobile ? "18px" : "20px", fontWeight: 700, letterSpacing: ".3px" },
-        controls: {
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "10px",
-            alignItems: "center",
-            width: isMobile ? "100%" : "auto",
-        },
-        select: {
-            background: "#0f1526",
-            color: "#e6ebff",
-            border: "1px solid rgba(255,255,255,.08)",
-            borderRadius: "12px",
-            padding: isMobile ? "12px 14px" : "10px 12px",
-            fontSize: isMobile ? "16px" : "14px",
-            outline: "none",
-            width: isMobile ? "100%" : "auto",
-            touchAction: "manipulation",
-        },
-        button: (variant = "primary") => ({
-            cursor: "pointer",
-            border: "1px solid transparent",
-            borderRadius: "14px",
-            padding: isMobile ? "12px 16px" : "10px 14px",
-            fontSize: isMobile ? "16px" : "14px",
-            fontWeight: 700,
-            letterSpacing: ".2px",
-            width: isMobile ? "100%" : "auto",
-            background:
-                variant === "danger"
-                    ? "linear-gradient(180deg,#ef444433,#b91c1c33)"
-                    : "linear-gradient(180deg,#2563eb33,#1d4ed833)",
-            color: "#e6ebff",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,.05)",
-            transition: prefersReducedMotion ? "none" : "transform .06s ease, filter .2s ease, border-color .2s ease",
-            touchAction: "manipulation",
-        }),
-        row: {
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "1fr auto",
-            gap: isMobile ? "14px" : "20px",
-            alignItems: "start",
-        },
-        boardWrap: { display: "grid", placeItems: "center", padding: isMobile ? "4px" : "8px" },
-        board: {
-            width: `${boardPx}px`,
-            height: `${boardPx}px`,
-            display: "grid",
-            gap: isMobile ? "4px" : "6px",
-            background: "rgba(255,255,255,.04)",
-            borderRadius: "16px",
-            padding: isMobile ? "4px" : "6px",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,.03)",
-            border: "1px solid rgba(255,255,255,.06)",
-            touchAction: "manipulation",
-        },
-        tile: {
-            position: "relative",
-            borderRadius: "12px",
-            boxShadow: "0 8px 20px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06)",
-            overflow: "hidden",
-            backgroundSize: "100% 100%",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "center",
-            userSelect: "none",
-            transition: prefersReducedMotion ? "none" : "transform 120ms ease, box-shadow 200ms ease",
-            display: "grid",
-            placeItems: "center",
-            color: "rgba(255,255,255,.92)",
-            fontSize: isMobile ? "clamp(12px, 3.2vw, 18px)" : "clamp(10px, 2.2vw, 18px)",
-            fontWeight: 800,
-            letterSpacing: ".3px",
-            border: "1px solid rgba(255,255,255,.06)",
-            touchAction: "manipulation",
-        },
-        sidebar: {
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            minWidth: isMobile ? "unset" : "220px",
-        },
-        hint: { fontSize: "12px", opacity: 0.8, lineHeight: 1.5 },
-        badge: {
-            display: "inline-block",
-            fontSize: isMobile ? "12px" : "12px",
-            padding: isMobile ? "5px 9px" : "6px 10px",
-            borderRadius: "999px",
-            background: "rgba(99,102,241,.15)",
-            border: "1px solid rgba(99,102,241,.35)",
-            color: "#c7d2fe",
-        },
-    };
-
-    const boardStyle = {
-        ...ui.board,
-        gridTemplateColumns: `repeat(${size}, 1fr)`,
-        gridTemplateRows: `repeat(${size}, 1fr)`,
-    };
-
-    function bgPositionForValue(v) {
-        const r = Math.floor(v / size);
-        const c = v % size;
-        const step = 100 / (size - 1 || 1);
-        return `${c * step}% ${r * step}%`;
-    }
-
-    return (
-        <div style={ui.page}>
-            <div style={ui.card}>
-                <div style={ui.header}>
-                    <div>
-                        {isSpecialDay && (
-                            <div
-                                style={{
-                                    padding: "12px 16px",
-                                    marginBottom: "16px",
-                                    borderRadius: "8px",
-                                    background: "linear-gradient(90deg, #4f46e5, #6366f1)",
-                                    color: "white",
-                                    fontWeight: "600",
-                                    textAlign: "center",
-                                }}
-                            >
-                                🎉 Happy Birthday Bink!
-                            </div>
-                        )}
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between" }}>
-                        <span style={ui.title}>✨ Slide Puzzle</span>
-                        <span style={ui.badge}>
-                            {size}×{size}
-                        </span>
-                    </div>
-
-                    <div style={ui.controls}>
-                        <label style={{ display: "flex", alignItems: "center", gap: 8, width: isMobile ? "100%" : "auto" }}>
-                            <span style={{ fontSize: isMobile ? 14 : 13, opacity: 0.8, minWidth: 36 }}>Size</span>
-                            <select
-                                style={ui.select}
-                                value={size}
-                                onChange={e => setSize(Number(e.target.value))}
-                                disabled={shuffling}
-                            >
-                                {[2, 3, 4, 5, 6].map(n => (
-                                    <option key={n} value={n}>
-                                        {n} × {n}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-
-                        <label style={{ ...ui.button(), display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-                            <input type="file" accept="image/*" onChange={onUpload} style={{ display: "none" }} disabled={shuffling} />
-                            Upload image
-                        </label>
-
-                        <button onClick={shuffle} style={ui.button()} disabled={shuffling} title="Shuffle into a solvable configuration">
-                            {shuffling ? "Shuffling…" : "Shuffle"}
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                setTiles(makeSolved(size));
-                                setMoves(0);
-                            }}
-                            style={ui.button("danger")}
-                            disabled={shuffling}
-                            title="Reset to solved state"
-                        >
-                            Reset
-                        </button>
-                    </div>
-                </div>
-
-                <div style={ui.row}>
-                    <div ref={containerRef} style={ui.boardWrap}>
-                        <div style={boardStyle}>
-                            {tiles.map((v, i) => {
-                                const isBlank = v === N - 1;
-                                const canMove = isNeighbor(i, blankIndex);
-                                const tileStyle = {
-                                    ...ui.tile,
-                                    cursor: !isBlank && canMove ? "pointer" : isBlank ? "default" : "not-allowed",
-                                    backgroundImage: isBlank ? "none" : `url("${imgSrc}")`,
-                                    backgroundSize: `${size * 100}% ${size * 100}%`,
-                                    backgroundPosition: isBlank ? "center" : bgPositionForValue(v),
-                                    filter: isBlank ? "saturate(0) opacity(.12)" : "none",
-                                    outline: canMove && !isBlank
-                                        ? "1px solid rgba(99,102,241,.6)"
-                                        : "1px solid rgba(255,255,255,.06)",
-                                };
-                                return (
-                                    <div
-                                        key={`${v}-${i}`}
-                                        onClick={() => !isBlank && move(i)}
-                                        style={tileStyle}
-                                        onMouseDown={e => {
-                                            if (!prefersReducedMotion && !isBlank && canMove) e.currentTarget.style.transform = "scale(.98)";
-                                        }}
-                                        onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
-                                        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-                                        aria-label={isBlank ? "blank" : `tile ${v + 1}`}
-                                        role="button"
-                                    >
-                                        {!isBlank && (
-                                            <span
-                                                style={{
-                                                    position: "absolute",
-                                                    bottom: isMobile ? 4 : 6,
-                                                    right: isMobile ? 6 : 8,
-                                                    padding: isMobile ? "3px 6px" : "4px 8px",
-                                                    borderRadius: 8,
-                                                    background: "rgba(0,0,0,.35)",
-                                                    fontWeight: 800,
-                                                    fontSize: isMobile ? 12 : 12,
-                                                    letterSpacing: ".3px",
-                                                }}
-                                            >
-                                                {v + 1}
-                                            </span>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <aside style={ui.sidebar}>
-                        <div
-                            style={{
-                                padding: isMobile ? "12px 12px" : "14px 16px",
-                                borderRadius: 14,
-                                background: "linear-gradient(180deg,#0f1526aa,#0c1223aa)",
-                                border: "1px solid rgba(255,255,255,.06)",
-                                boxShadow: "inset 0 1px 0 rgba(255,255,255,.04)",
-                            }}
-                        >
-                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                                <span style={{ opacity: 0.8 }}>Moves</span>
-                                <strong>{moves}</strong>
-                            </div>
-                            <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                <span style={{ opacity: 0.8 }}>Status</span>
-                                <strong style={{ color: solved ? "#86efac" : "#c7d2fe" }}>
-                                    {solved ? "Solved 🎉" : "In progress"}
-                                </strong>
-                            </div>
-                        </div>
-
-                        <div
-                            style={{
-                                padding: isMobile ? "12px 12px" : "14px 16px",
-                                borderRadius: 14,
-                                background: "linear-gradient(180deg,#0f1526aa,#0c1223aa)",
-                                border: "1px solid rgba(255,255,255,.06)",
-                                boxShadow: "inset 0 1px 0 rgba(255,255,255,.04)",
-                            }}
-                        >
-                            <div style={{ marginBottom: 8, fontWeight: 700, letterSpacing: ".2px" }}>How to play</div>
-                            <p style={ui.hint}>
-                                Tap a tile next to the blank space to slide it. Recreate the original picture. Use <em>Shuffle</em> to
-                                start a new solvable puzzle. Upload your own image for fun!
-                            </p>
-                        </div>
-
-                        {/*<video*/}
-                        {/*    ref={videoRef}*/}
-                        {/*    src={video1}*/}
-                        {/*    style={{ display: "none", width: "100%", maxWidth: "600px" }}*/}
-                        {/*    controls*/}
-                        {/*/>*/}
-                    </aside>
-                </div>
-            </div>
+          <StatsPanel
+            moves={moves}
+            elapsedMs={timer.elapsedMs}
+            best={best}
+            progress={progress}
+            imgSrc={imgSrc}
+            solved={solved}
+          />
         </div>
-    );
+      </div>
+
+      <ImagePicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        currentSrc={imgSrc}
+        onSelectPreset={handleSelectPreset}
+        onUpload={handleUpload}
+      />
+
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+
+      {showWin && (
+        <WinOverlay
+          moves={moves}
+          elapsedMs={timer.elapsedMs}
+          isNewBest={justNewBest}
+          onPlayAgain={shuffle}
+          onNewPhoto={() => {
+            setShowWin(false);
+            setPickerOpen(true);
+          }}
+        />
+      )}
+    </div>
+  );
 }
