@@ -1,46 +1,50 @@
 :root {
   color-scheme: dark;
 
-  --ipg-font: "Outfit", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ipg-font-display: "Press Start 2P", ui-sans-serif, system-ui, sans-serif;
+  --ipg-font-body: "VT323", ui-monospace, "Segoe UI", monospace;
 
-  --ipg-bg-1: #0b0f1a;
-  --ipg-bg-2: #121728;
-  --ipg-bg-3: #171d33;
-  --ipg-accent: #6366f1;
-  --ipg-accent-2: #8b5cf6;
-  --ipg-accent-3: #22d3ee;
-  --ipg-text: #eef1ff;
-  --ipg-text-dim: rgba(238, 241, 255, 0.68);
-  --ipg-text-faint: rgba(238, 241, 255, 0.45);
-  --ipg-card-bg: rgba(20, 25, 45, 0.72);
-  --ipg-card-border: rgba(255, 255, 255, 0.08);
-  --ipg-panel-bg: rgba(255, 255, 255, 0.04);
-  --ipg-panel-border: rgba(255, 255, 255, 0.08);
-  --ipg-success: #34d399;
-  --ipg-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  /* Deep-space cabinet black + neon marquee colors */
+  --ipg-bg-1: #0a0014;
+  --ipg-bg-2: #150022;
+  --ipg-bg-3: #1c0a30;
+  --ipg-accent: #ff2e88;
+  --ipg-accent-2: #b026ff;
+  --ipg-accent-3: #05d9e8;
+  --ipg-gold: #ffd60a;
+  --ipg-text: #f6f1ff;
+  --ipg-text-dim: rgba(246, 241, 255, 0.72);
+  --ipg-text-faint: rgba(246, 241, 255, 0.5);
+  --ipg-card-bg: rgba(8, 2, 18, 0.86);
+  --ipg-card-border: rgba(5, 217, 232, 0.35);
+  --ipg-panel-bg: rgba(255, 255, 255, 0.05);
+  --ipg-panel-border: rgba(255, 255, 255, 0.12);
+  --ipg-success: #39ff6a;
+  --ipg-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 
-  --ipg-glow-1: rgba(99, 102, 241, 0.3);
-  --ipg-glow-2: rgba(34, 211, 238, 0.22);
-  --ipg-glow-3: rgba(139, 92, 246, 0.2);
+  --ipg-glow-1: rgba(255, 46, 136, 0.35);
+  --ipg-glow-2: rgba(5, 217, 232, 0.28);
+  --ipg-glow-3: rgba(176, 38, 255, 0.28);
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --ipg-bg-1: #eef1fb;
-  --ipg-bg-2: #f7f8fd;
-  --ipg-bg-3: #e4e8fb;
-  --ipg-text: #171b2e;
-  --ipg-text-dim: rgba(23, 27, 46, 0.68);
-  --ipg-text-faint: rgba(23, 27, 46, 0.5);
-  --ipg-card-bg: rgba(255, 255, 255, 0.75);
-  --ipg-card-border: rgba(23, 27, 46, 0.08);
-  --ipg-panel-bg: rgba(23, 27, 46, 0.04);
-  --ipg-panel-border: rgba(23, 27, 46, 0.08);
-  --ipg-shadow: 0 20px 60px rgba(23, 27, 46, 0.15);
+  /* Cream 80s-cabinet plastic instead of black glass */
+  --ipg-bg-1: #fff2da;
+  --ipg-bg-2: #ffe6c2;
+  --ipg-bg-3: #ffd9ae;
+  --ipg-text: #2b1050;
+  --ipg-text-dim: rgba(43, 16, 80, 0.72);
+  --ipg-text-faint: rgba(43, 16, 80, 0.52);
+  --ipg-card-bg: rgba(255, 251, 240, 0.88);
+  --ipg-card-border: rgba(176, 38, 255, 0.35);
+  --ipg-panel-bg: rgba(43, 16, 80, 0.05);
+  --ipg-panel-border: rgba(43, 16, 80, 0.14);
+  --ipg-shadow: 0 20px 60px rgba(90, 40, 10, 0.25);
 
-  --ipg-glow-1: rgba(99, 102, 241, 0.16);
-  --ipg-glow-2: rgba(34, 211, 238, 0.14);
-  --ipg-glow-3: rgba(139, 92, 246, 0.12);
+  --ipg-glow-1: rgba(255, 46, 136, 0.2);
+  --ipg-glow-2: rgba(5, 217, 232, 0.18);
+  --ipg-glow-3: rgba(176, 38, 255, 0.18);
 }
 
 * {
@@ -54,7 +58,8 @@ body {
 }
 
 body {
-  font-family: var(--ipg-font);
+  font-family: var(--ipg-font-body);
+  font-size: 18px;
   background: var(--ipg-bg-1);
   color: var(--ipg-text);
   -webkit-font-smoothing: antialiased;

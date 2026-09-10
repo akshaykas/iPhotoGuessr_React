@@ -1,4 +1,4 @@
-const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#22d3ee", "#facc15", "#34d399"];
+const COLORS = ["#ff2e88", "#b026ff", "#05d9e8", "#ffd60a", "#39ff6a", "#ff5d7a"];
 
 export function runConfetti(canvas, { duration = 2600, particleCount = 140 } = {}) {
   const ctx = canvas.getContext("2d");

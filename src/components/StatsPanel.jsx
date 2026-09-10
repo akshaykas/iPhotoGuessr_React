@@ -29,7 +29,7 @@ const StatsPanel = forwardRef(function StatsPanel(
 
       {best && (
         <div className="ipg-stat-card">
-          <div className="ipg-stat-title">Best on this size</div>
+          <div className="ipg-stat-title">High score</div>
           <div className="ipg-stat-row">
             <span>Moves</span>
             <strong>{best.moves}</strong>
@@ -42,7 +42,7 @@ const StatsPanel = forwardRef(function StatsPanel(
       )}
 
       <div className="ipg-stat-card ipg-reference-card">
-        <div className="ipg-stat-title">Reference</div>
+        <div className="ipg-stat-title">Photo</div>
         <img
           ref={imgRef}
           className="ipg-reference-thumb"

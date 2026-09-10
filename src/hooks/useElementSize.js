@@ -10,7 +10,10 @@ export function useElementSize() {
     const observer = new ResizeObserver(entries => {
       const entry = entries[0];
       if (!entry) return;
-      const { width, height } = entry.contentRect;
+      // Use the full border box (not entry.contentRect, which excludes
+      // padding/border) so elements with their own padding or border are
+      // measured as the space they actually occupy in the layout.
+      const { width, height } = entry.target.getBoundingClientRect();
       setSize({ width, height });
     });
     observer.observe(el);

@@ -14,8 +14,8 @@ export default function WinOverlay({ moves, elapsedMs, isNewBest, onPlayAgain, o
     <div className="ipg-win-overlay">
       <canvas ref={canvasRef} className="ipg-confetti-canvas" />
       <div className="ipg-win-card">
-        {isNewBest && <div className="ipg-win-badge">🏆 New best!</div>}
-        <h2>Solved!</h2>
+        {isNewBest && <div className="ipg-win-badge">🏆 New high score!</div>}
+        <h2>You win!</h2>
         <p className="ipg-win-stats">
           {moves} moves · {formatTime(elapsedMs)}
         </p>
