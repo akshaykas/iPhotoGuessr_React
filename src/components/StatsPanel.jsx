@@ -1,8 +1,12 @@
+import { forwardRef } from "react";
 import { formatTime } from "../utils/format";
 
-export default function StatsPanel({ moves, elapsedMs, best, progress, imgSrc, solved }) {
+const StatsPanel = forwardRef(function StatsPanel(
+  { moves, elapsedMs, best, progress, imgSrc, solved, imgMaxHeight, imgRef, maxHeight },
+  ref
+) {
   return (
-    <aside className="ipg-sidebar">
+    <aside ref={ref} className="ipg-sidebar" style={maxHeight ? { maxHeight, overflowY: "auto" } : undefined}>
       <div className="ipg-stat-card">
         <div className="ipg-stat-row">
           <span>Moves</span>
@@ -39,8 +43,16 @@ export default function StatsPanel({ moves, elapsedMs, best, progress, imgSrc, s
 
       <div className="ipg-stat-card ipg-reference-card">
         <div className="ipg-stat-title">Reference</div>
-        <img className="ipg-reference-thumb" src={imgSrc} alt="Puzzle reference" />
+        <img
+          ref={imgRef}
+          className="ipg-reference-thumb"
+          src={imgSrc}
+          alt="Puzzle reference"
+          style={imgMaxHeight ? { maxHeight: imgMaxHeight } : undefined}
+        />
       </div>
     </aside>
   );
-}
+});
+
+export default StatsPanel;

@@ -13,7 +13,8 @@ import { useTimer } from "./hooks/useTimer";
 import { useSound } from "./hooks/useSound";
 import { useViewportSize } from "./hooks/useViewportSize";
 import { useImageLoader } from "./hooks/useImageLoader";
-import { boardSizePx } from "./utils/layout";
+import { useElementSize } from "./hooks/useElementSize";
+import { computeLayout } from "./utils/layout";
 import { PRESET_IMAGES } from "./utils/presets";
 
 const BEST_KEY = "ipg.best.v1";
@@ -35,8 +36,28 @@ export default function App() {
   }, [theme]);
 
   const { width: vw, height: vh } = useViewportSize();
-  const isMobile = vw <= 768;
-  const boardPx = boardSizePx(vw, vh, isMobile);
+  const isStacked = vw <= 768;
+  const isNarrow = vw <= 640;
+  const [chromeRef, chromeSize] = useElementSize();
+  const [sidebarRef, sidebarSize] = useElementSize();
+  const [imgRef, imgSize] = useElementSize();
+
+  // Everything in the sidebar except the photo itself (stat cards, "best"
+  // card when it's showing, titles, gaps) — measured directly rather than
+  // estimated, so it stays correct no matter which cards happen to be
+  // visible. Falls back to a reasonable guess only until the very first
+  // ResizeObserver report lands.
+  const otherSidebarH =
+    sidebarSize.height && imgSize.height ? Math.max(0, sidebarSize.height - imgSize.height) : 190;
+
+  const { boardPx, imageCapPx: referenceCapPx, sidebarMaxHeightPx } = computeLayout({
+    vw,
+    vh,
+    isStacked,
+    isNarrow,
+    chromeH: chromeSize.height || 96,
+    otherSidebarH,
+  });
   const prefersReducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia &&
@@ -115,25 +136,27 @@ export default function App() {
   return (
     <div className="ipg-page">
       <div className="ipg-card">
-        <Header
-          theme={theme}
-          onToggleTheme={() => setTheme(t => (t === "dark" ? "light" : "dark"))}
-          soundOn={soundOn}
-          onToggleSound={() => setSoundOn(s => !s)}
-          onShowHelp={() => setHelpOpen(true)}
-          size={size}
-        />
+        <div className="ipg-chrome" ref={chromeRef}>
+          <Header
+            theme={theme}
+            onToggleTheme={() => setTheme(t => (t === "dark" ? "light" : "dark"))}
+            soundOn={soundOn}
+            onToggleSound={() => setSoundOn(s => !s)}
+            onShowHelp={() => setHelpOpen(true)}
+            size={size}
+          />
 
-        <Toolbar
-          size={size}
-          onSizeChange={setSize}
-          onOpenPicker={() => setPickerOpen(true)}
-          onShuffle={shuffle}
-          onRestart={restart}
-          shuffling={shuffling}
-          showNumbers={showNumbers}
-          onToggleNumbers={() => setShowNumbers(v => !v)}
-        />
+          <Toolbar
+            size={size}
+            onSizeChange={setSize}
+            onOpenPicker={() => setPickerOpen(true)}
+            onShuffle={shuffle}
+            onRestart={restart}
+            shuffling={shuffling}
+            showNumbers={showNumbers}
+            onToggleNumbers={() => setShowNumbers(v => !v)}
+          />
+        </div>
 
         <div className="ipg-layout">
           <div className="ipg-board-wrap">
@@ -152,12 +175,16 @@ export default function App() {
           </div>
 
           <StatsPanel
+            ref={sidebarRef}
+            imgRef={imgRef}
             moves={moves}
             elapsedMs={timer.elapsedMs}
             best={best}
             progress={progress}
             imgSrc={imgSrc}
             solved={solved}
+            imgMaxHeight={referenceCapPx}
+            maxHeight={sidebarMaxHeightPx}
           />
         </div>
       </div>

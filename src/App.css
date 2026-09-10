@@ -29,6 +29,9 @@
   position: relative;
   z-index: 1;
   width: min(96vw, 1040px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
   background: var(--ipg-card-bg);
   border: 1px solid var(--ipg-card-border);
   border-radius: 22px;
@@ -37,6 +40,12 @@
   -webkit-backdrop-filter: blur(18px);
   padding: 22px;
   animation: ipg-card-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ipg-chrome {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 @keyframes ipg-card-in {
@@ -57,7 +66,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 18px;
   flex-wrap: wrap;
 }
 
@@ -122,7 +130,6 @@
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  margin-bottom: 18px;
 }
 
 .ipg-field {
@@ -141,6 +148,15 @@
   padding: 10px 12px;
   font-size: 14px;
   outline: none;
+}
+
+/* The dropdown popup is drawn by the OS/browser with its own light
+   background regardless of our page theme, so force readable dark text
+   on the options themselves instead of inheriting the (often light)
+   page text color. */
+.ipg-field select option {
+  color: #171b2e;
+  background: #ffffff;
 }
 
 .ipg-btn {
@@ -199,7 +215,7 @@
   align-items: start;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 768px) {
   .ipg-layout {
     grid-template-columns: 1fr;
   }
